@@ -1,1 +1,1 @@
-# FYP
+# NeuroAI
