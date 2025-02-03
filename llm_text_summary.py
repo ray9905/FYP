@@ -14,6 +14,11 @@ def llm_text_summary(eeg_result):
         ]
     )
 
+    return gpt_response.choices[0].message.content
+
+print(llm_text_summary("abnormal"))   
+
+ 
    
     
     
