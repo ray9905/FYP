@@ -6,4 +6,4 @@ import numpy as np
 st.title('Welcome to NeuroAI')
 
 # Header
-
+st.write('Upload an EEG file to get started')
