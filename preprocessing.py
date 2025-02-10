@@ -9,3 +9,6 @@ print(eeg_data.info)
 #filters relevant data between 1 and 50 Hz
 eeg_data.filter(1, 50)
 
+#applies average reference to the data
+eeg_data.set_eeg_reference('average')
+
