@@ -32,13 +32,15 @@ frequency = eeg_data.info['sfreq']
 window_samples = int(window_duration * frequency)
 
 #creates segments of the data
-eeg_segments = np.array([eeg_array[i:i+window_samples] for i in range(0, eeg_array.shape[0], window_samples)])
+eeg_segments = [ eeg_array[i:i + window_samples] for i in range(0, eeg_array.shape[0] - window_samples, window_samples) ]
 
 #Adds padding if final segment is smaller than window_samples to ensure all segments are of equal length 
-if eeg_array.shape[0] % window_samples != 0:
-    final_segment = eeg_array[-window_samples:]
+remaining_samples = eeg_array.shape[0] % window_samples
+if remaining_samples != 0:
+    final_segment = eeg_array[-remaining_samples:]
     padded_segment = np.zeros((window_samples, eeg_array.shape[1]))
-    padded_segment[: final_segment.shape[0], :] = final_segment
-    eeg_segments.append([padded_segment])
+    padded_segment[: remaining_samples, :] = final_segment
+    eeg_segments.append(padded_segment)
 
-print(eeg_segments.shape)
+eeg_segments = np.array(eeg_segments)
+print(f"eeg shape is: {eeg_segments.shape} ")
