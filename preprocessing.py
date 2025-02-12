@@ -19,8 +19,8 @@ eeg_array = eeg_data.get_data() *1000000
 #swaps axes to samples, channels
 eeg_array = eeg_array.transpose(1,0)
 
-print(eeg_array)
-print(f"Minimum: {np.min(eeg_array)} , Maximum: {np.max(eeg_array)}")
+#print(eeg_array)
+#print(f"Minimum: {np.min(eeg_array)} , Maximum: {np.max(eeg_array)}") 
 
 #seconds
 window_duration = 1
@@ -34,5 +34,11 @@ window_samples = int(window_duration * frequency)
 #creates segments of the data
 eeg_segments = np.array([eeg_array[i:i+window_samples] for i in range(0, eeg_array.shape[0], window_samples)])
 
+#Adds padding if final segment is smaller than window_samples to ensure all segments are of equal length 
+if eeg_array.shape[0] % window_samples != 0:
+    final_segment = eeg_array[-window_samples:]
+    padded_segment = np.zeros((window_samples, eeg_array.shape[1]))
+    padded_segment[: final_segment.shape[0], :] = final_segment
+    eeg_segments.append([padded_segment])
 
-
+print(eeg_segments.shape)
