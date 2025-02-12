@@ -22,5 +22,17 @@ eeg_array = eeg_array.transpose(1,0)
 print(eeg_array)
 print(f"Minimum: {np.min(eeg_array)} , Maximum: {np.max(eeg_array)}")
 
+#seconds
+window_duration = 1
+
+#sampling frequency
+frequency = eeg_data.info['sfreq'] 
+
+#number of samples in a window
+window_samples = int(window_duration * frequency)
+
+#creates segments of the data
+eeg_segments = np.array([eeg_array[i:i+window_samples] for i in range(0, eeg_array.shape[0], window_samples)])
+
 
 
