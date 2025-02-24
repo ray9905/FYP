@@ -1,5 +1,6 @@
 import mne
 import numpy as np
+import pandas as pd
 
 #loads the eeg data from edf file
 eeg_data = mne.io.read_raw_edf('0000003.edf', preload=True)
@@ -47,3 +48,13 @@ print(f"eeg shape is: {eeg_segments.shape} ")
 
 #Save EEG data for training
 np.save("processed_eeg.npy", eeg_segments)
+
+#Loads label from excel file
+labels_df = pd.read_excel("labels.xlsx")  # Update filename if needed
+
+# Extracts normal or abnormal reading from second column
+labels_text = labels_df.iloc[:, 1].values 
+
+# Converts normal or abnormal  into 0 or 1
+labels = np.array([0 if label.lower() == "normal" else 1 for label in labels_text])
+
