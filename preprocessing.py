@@ -43,6 +43,7 @@ if remaining_samples != 0:
     padded_segment[: remaining_samples, :] = final_segment
     eeg_segments.append(padded_segment)
 
+#converts to numpy array
 eeg_segments = np.array(eeg_segments)
 print(f"eeg shape is: {eeg_segments.shape} ")
 
@@ -52,16 +53,24 @@ np.save("processed_eeg.npy", eeg_segments)
 #Loads label from excel file
 labels_df = pd.read_excel("Labels.xlsx")  # Update filename if needed
 
+record_name = "0000003.edf"  # EEG record
+
+#Filters labels for a specific record name
+labels_df = labels_df[labels_df["recordname"] == record_name] 
+
+# Makes sure that at least one label was found
+if labels_df.empty:
+    raise ValueError(f"No label found for {record_name} in Labels.xlsx")
+
 #Gets normal or abnormal reading from second column
-labels_text = labels_df.iloc[:, 1].values 
-
-# Converts normal or abnormal  into 0 or 1
-labels = np.array([0 if label.lower() == "normal" else 1 for label in labels_text])
+label_text = labels_df.iloc[0, 1]
 
 
-#Checks if the number of labels matches the number of EEG segments
-if len(labels) != eeg_segments.shape[0]:
-    raise ValueError(f"Mismatch: {len(labels)} labels vs. {eeg_segments.shape[0]} EEG segments")
+#Converts normal or abnormal  into 0 or 1
+label_numeric = 0 if label_text.lower() == "normal" else 1
+
+#Duplicates  label to match the number of EEG segments
+labels = np.full((eeg_segments.shape[0],), label_numeric)  
 
 #Saves labels as a numpy array
 np.save("labels.npy", labels)
