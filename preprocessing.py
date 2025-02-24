@@ -44,3 +44,6 @@ if remaining_samples != 0:
 
 eeg_segments = np.array(eeg_segments)
 print(f"eeg shape is: {eeg_segments.shape} ")
+
+# Save EEG data for training
+np.save("processed_eeg.npy", eeg_segments)
