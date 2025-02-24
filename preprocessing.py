@@ -50,11 +50,17 @@ print(f"eeg shape is: {eeg_segments.shape} ")
 np.save("processed_eeg.npy", eeg_segments)
 
 #Loads label from excel file
-labels_df = pd.read_excel("labels.xlsx")  # Update filename if needed
+labels_df = pd.read_excel("Labels.xlsx")  # Update filename if needed
 
-# Extracts normal or abnormal reading from second column
+#Gets normal or abnormal reading from second column
 labels_text = labels_df.iloc[:, 1].values 
 
 # Converts normal or abnormal  into 0 or 1
 labels = np.array([0 if label.lower() == "normal" else 1 for label in labels_text])
+
+
+#Checks if the number of labels matches the number of EEG segments
+if len(labels) != eeg_segments.shape[0]:
+    raise ValueError(f"Mismatch: {len(labels)} labels vs. {eeg_segments.shape[0]} EEG segments")
+
 
