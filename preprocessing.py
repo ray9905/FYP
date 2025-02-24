@@ -63,4 +63,5 @@ labels = np.array([0 if label.lower() == "normal" else 1 for label in labels_tex
 if len(labels) != eeg_segments.shape[0]:
     raise ValueError(f"Mismatch: {len(labels)} labels vs. {eeg_segments.shape[0]} EEG segments")
 
-
+#Saves labels as a numpy array
+np.save("labels.npy", labels)
