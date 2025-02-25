@@ -65,7 +65,6 @@ if labels_df.empty:
 #Gets normal or abnormal reading from second column
 label_text = labels_df.iloc[0, 1]
 
-
 #Converts normal or abnormal  into 0 or 1
 label_numeric = 0 if label_text.lower() == "normal" else 1
 
