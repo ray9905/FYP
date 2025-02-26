@@ -3,7 +3,9 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, LSTM, Dense, Dropout
 from sklearn.model_selection import train_test_split
-
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import BatchNormalization
+import matplotlib.pyplot as plt
 
 #Loads the preprocessed EEG data
 final_segment = np.load("processed_eeg.npy")
@@ -23,35 +25,52 @@ print(f"Training Data Shape: {X_train.shape}, Training Labels Shape: {y_train.sh
 print(f"Validation Data Shape: {X_val.shape}, Validation Labels Shape: {y_val.shape}")
 
 #CNN-LSTM Model
-model = Sequential([
+model = Sequential()
 
-    #First convolutional layer detects EEG patterns across different channels
-    Conv1D(64, kernel_size=3, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2])),
-    
-    #First pooling layer reduces size 
-    MaxPooling1D(pool_size=2),
+#Input layer
+model.add(Input(shape=(X_train.shape[1], X_train.shape[2])))
 
-    #Second convolutional layer extracts deeper EEG patterns
-    Conv1D(128, kernel_size=3, activation='relu'),
+#First convolutional layer detects EEG patterns across different channels
+model.add(Conv1D(64, kernel_size=3, activation='relu'))
+model.add(BatchNormalization())
 
-    #Second pooling layer further reduces size
-    MaxPooling1D(pool_size=2),
+#First pooling layer reduces size 
+model.add(MaxPooling1D(pool_size=2))
 
-    #First LSTM layer detects temporal patterns in EEG data
-    LSTM(64, return_sequences=True),
+#Second convolutional layer extracts deeper EEG patterns
+model.add(Conv1D(128, kernel_size=3, activation='relu'))
+model.add(BatchNormalization())
 
-    #Second LSTM layer extracts deeper time dependent patterns in EEG data
-    LSTM(32),
+#Second pooling layer further reduces size
+model.add(MaxPooling1D(pool_size=2))
 
-    #Fully connected dense layer converts EEG patterns into meaningful values
-    Dense(64, activation='relu'),
+#First LSTM layer detects temporal patterns in EEG data
+model.add(LSTM(64, return_sequences=True))
 
-    #Dropout Layer prevents overfitting
-    Dropout(0.3),
+#Second LSTM layer extracts deeper time dependent patterns in EEG data
+model.add(LSTM(32))
 
-    #Output Layer outputs 0 (normal) or 1 (abnormal)
-    Dense(1, activation='sigmoid')
-])
+#Fully connected dense layer converts EEG patterns into meaningful values
+model.add(Dense(64, activation='relu'))
+
+#Dropout Layer prevents overfitting
+model.add(Dropout(0.3))
+
+#Output Layer outputs 0 (normal) or 1 (abnormal)
+model.add(Dense(1, activation='sigmoid'))
+
+#Compiles the model and assesses its accuracy
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 #Prints summary
 model.summary()
+
+#Trains the model
+training_results = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
+
+#Evaluates the model
+loss, accuracy = model.evaluate(X_val, y_val)
+print(f"Validation Accuracy is: {accuracy:.2f}")
+
+#Saves the model
+model.save("eeg_model.h5")
