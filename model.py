@@ -1,5 +1,9 @@
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, LSTM, Dense, Dropout
 from sklearn.model_selection import train_test_split
+
 
 #Loads the preprocessed EEG data
 final_segment = np.load("processed_eeg.npy")
@@ -48,3 +52,6 @@ model = Sequential([
     #Output Layer outputs 0 (normal) or 1 (abnormal)
     Dense(1, activation='sigmoid')
 ])
+
+#Prints summary
+model.summary()
