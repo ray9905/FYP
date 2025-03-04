@@ -1,17 +1,12 @@
-# Ignore all EEG Data files
+# Ignore all EEG data files and subfolders
 eeg_data/
-*.edf
+eeg_data/**
 
-# Ignore model checkpoints & large generated files
-*.h5
-*.keras
-*.npy
 
-# Ignore Python cache files
-__pycache__/
 
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints/
+*.edf  # EEG files
+*.h5   # Model checkpoint files
+*.keras # Keras model files
+*.npy  # NumPy saved files
 
-# Ignore VS Code settings (optional)
-.vscode/
+
