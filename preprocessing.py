@@ -78,3 +78,21 @@ train_abnormal_segments, train_abnormal_labels = process_eeg(os.path.join(TRAIN_
 eval_normal_segments, eval_normal_labels = process_eeg(os.path.join(EVAL_PATH, "Normal"), 0)
 eval_abnormal_segments, eval_abnormal_labels = process_eeg(os.path.join(EVAL_PATH, "Abnormal"), 1)
 
+# Combine Training Data
+X_train = np.vstack([train_normal_segments, train_abnormal_segments])
+y_train = np.hstack([train_normal_labels, train_abnormal_labels])
+
+# Combine Evaluation Data
+X_val = np.vstack([eval_normal_segments, eval_abnormal_segments])
+y_val = np.hstack([eval_normal_labels, eval_abnormal_labels])
+
+# Save as NumPy arrays
+np.save("train_eeg.npy", X_train)
+np.save("train_labels.npy", y_train)
+np.save("eval_eeg.npy", X_val)
+np.save("eval_labels.npy", y_val)
+
+print(f"Saved Training EEG data: {X_train.shape}")
+print(f"Saved Training Labels: {y_train.shape}")
+print(f"Saved Evaluation EEG data: {X_val.shape}")
+print(f"Saved Evaluation Labels: {y_val.shape}")
