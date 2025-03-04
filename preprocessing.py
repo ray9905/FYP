@@ -3,9 +3,12 @@ import numpy as np
 import os
 
 # Dataset paths
-BASE_PATH = "EEG_Data"
-TRAIN_PATH = os.path.join(BASE_PATH, "Train")
-EVAL_PATH = os.path.join(BASE_PATH, "Eval")
+BASE_PATH = "eeg_data" 
+TRAIN_PATH_NORMAL = os.path.join(BASE_PATH, "normal", "train")
+EVAL_PATH_NORMAL = os.path.join(BASE_PATH, "normal", "eval")
+TRAIN_PATH_ABNORMAL = os.path.join(BASE_PATH, "abnormal", "train")
+EVAL_PATH_ABNORMAL = os.path.join(BASE_PATH, "abnormal", "eval")
+
 
 # Processes EEG files and assigns labels based on folder name
 def process_eeg(folder_path, label):
@@ -71,12 +74,12 @@ def process_eeg(folder_path, label):
         return None, None
 
 # Process Training Data (Normal = 0, Abnormal = 1)
-train_normal_segments, train_normal_labels = process_eeg(os.path.join(TRAIN_PATH, "Normal"), 0)
-train_abnormal_segments, train_abnormal_labels = process_eeg(os.path.join(TRAIN_PATH, "Abnormal"), 1)
+train_normal_segments, train_normal_labels = process_eeg(TRAIN_PATH_NORMAL, 0)
+train_abnormal_segments, train_abnormal_labels = process_eeg(TRAIN_PATH_ABNORMAL, 1)
 
 # Process Evaluation Data (Normal = 0, Abnormal = 1)
-eval_normal_segments, eval_normal_labels = process_eeg(os.path.join(EVAL_PATH, "Normal"), 0)
-eval_abnormal_segments, eval_abnormal_labels = process_eeg(os.path.join(EVAL_PATH, "Abnormal"), 1)
+eval_normal_segments, eval_normal_labels = process_eeg(EVAL_PATH_NORMAL, 0)
+eval_abnormal_segments, eval_abnormal_labels = process_eeg(EVAL_PATH_ABNORMAL, 1)
 
 # Combine Training Data
 X_train = np.vstack([train_normal_segments, train_abnormal_segments])
