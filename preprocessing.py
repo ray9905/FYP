@@ -55,4 +55,26 @@ def process_eeg(folder_path, label):
         # Converts to numpy array
         eeg_segments = np.array(eeg_segments)
 
-        
+        # Creates labels for all segments
+        labels = np.full((eeg_segments.shape[0],), label)
+
+        # Appends to the dataset
+        all_segments.append(eeg_segments)
+        all_labels.append(labels)
+
+    # Combines segments and labels
+    if all_segments:
+        final_segment = np.vstack(all_segments)
+        labels = np.hstack(all_labels)
+        return final_segment, labels
+    else:
+        return None, None
+
+# Process Training Data (Normal = 0, Abnormal = 1)
+train_normal_segments, train_normal_labels = process_eeg(os.path.join(TRAIN_PATH, "Normal"), 0)
+train_abnormal_segments, train_abnormal_labels = process_eeg(os.path.join(TRAIN_PATH, "Abnormal"), 1)
+
+# Process Evaluation Data (Normal = 0, Abnormal = 1)
+eval_normal_segments, eval_normal_labels = process_eeg(os.path.join(EVAL_PATH, "Normal"), 0)
+eval_abnormal_segments, eval_abnormal_labels = process_eeg(os.path.join(EVAL_PATH, "Abnormal"), 1)
+
