@@ -34,36 +34,32 @@ def process_eeg_with_features(folder_path, label):
         ica.fit(eeg_data)
         eeg_data = ica.apply(eeg_data)
 
-
-
-        # Filters relevant data between 1 and 50 Hz
-        eeg_data.filter(1, 50)
-
-        # Applies average reference to the data
-        eeg_data.set_eeg_reference('average')
-
         # Converts data from volts to microvolts
         eeg_array = eeg_data.get_data() * 1e6
-
         # Swaps axes to (samples, channels)
         eeg_array = eeg_array.T
+        sfreq = eeg_data.info["sfreq"]
 
-        # Splits into 1-second windows
-        sampling_rate = int(eeg_data.info['sfreq'])
-        window_samples = sampling_rate * 1
 
-        eeg_segments = [
-            eeg_array[i:i + window_samples]
-            for i in range(0, eeg_array.shape[0] - window_samples, window_samples)
-        ]
+        #Extracts the Power Spectral Density (PSD) Features
+        from scipy.signal import welch
+        def compute_psd_features(eeg_segment, sfreq):
+            freqs, psd = welch(eeg_segment, sfreq, nperseg=sfreq)
+            freq_bands = {
+                "delta": (0.5, 4),
+                "theta": (4, 8),
+                "alpha": (8, 13),
+                "beta": (13, 30),
+                "gamma": (30, 50)
+            }
+            band_power = []
+            for band, (low, high) in freq_bands.items():
+                band_indices = (freqs >= low) & (freqs <= high)
+                band_power.append(np.mean(psd[:, band_indices], axis=1))
+            return np.concatenate(band_power, axis=-1)
 
-        # Adds padding if final segment is smaller than window_samples
-        remaining_samples = eeg_array.shape[0] % window_samples
-        if remaining_samples != 0:
-            final_segment = eeg_array[-remaining_samples:]
-            padded_segment = np.zeros((window_samples, eeg_array.shape[1]))
-            padded_segment[:remaining_samples, :] = final_segment
-            eeg_segments.append(padded_segment)
+
+       
 
         # Converts to numpy array
         eeg_segments = np.array(eeg_segments)
