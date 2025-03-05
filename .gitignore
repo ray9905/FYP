@@ -10,3 +10,7 @@ eeg_data/**
 *.npy  # NumPy saved files
 
 
+train_labels.npy
+eval_eeg.npy
+eval_labels.npy
+train_eeg.npy
