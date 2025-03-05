@@ -1,0 +1,16 @@
+# Ignore all EEG data files and subfolders
+eeg_data/
+eeg_data/**
+
+
+
+*.edf  # EEG files
+*.h5   # Model checkpoint files
+*.keras # Keras model files
+*.npy  # NumPy saved files
+
+
+
+eeg_model.h5
+processed_eeg.npy
+labels.npy
