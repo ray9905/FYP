@@ -21,7 +21,20 @@ def process_eeg_with_features(folder_path, label):
 
         # Loads the EEG data from the edf file
         eeg_data = mne.io.read_raw_edf(file_path, preload=True)
-        print(eeg_data.info)  # Displays EEG file info
+        print(eeg_data.info)  
+        
+        # Apply Notch Filter (50Hz) to remove powerline noise
+        eeg_data.notch_filter(freqs=50)
+
+        # Apply Bandpass Filter (1-50Hz) to remove irrelevant frequencies
+        eeg_data.filter(1, 50)
+
+        # Apply ICA to remove artifacts (blinks, muscle movements, etc.)
+        ica = mne.preprocessing.ICA(n_components=20, random_state=42)
+        ica.fit(eeg_data)
+        eeg_data = ica.apply(eeg_data)
+
+
 
         # Filters relevant data between 1 and 50 Hz
         eeg_data.filter(1, 50)
