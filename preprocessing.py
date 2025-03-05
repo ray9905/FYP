@@ -61,31 +61,16 @@ def process_eeg_with_features(folder_path, label):
 
        
 
-        # Converts to numpy array
-        eeg_segments = np.array(eeg_segments)
 
-        # Creates labels for all segments
-        labels = np.full((eeg_segments.shape[0],), label)
-
-        # Appends to the dataset
-        all_segments.append(eeg_segments)
-        all_labels.append(labels)
-
-    # Combines segments and labels
-    if all_segments:
-        final_segment = np.vstack(all_segments)
-        labels = np.hstack(all_labels)
-        return final_segment, labels
-    else:
-        return None, None
+        
 
 # Process Training Data (Normal = 0, Abnormal = 1)
-train_normal_segments, train_normal_labels = process_eeg(TRAIN_PATH_NORMAL, 0)
-train_abnormal_segments, train_abnormal_labels = process_eeg(TRAIN_PATH_ABNORMAL, 1)
+train_normal_segments, train_normal_labels = process_eeg_with_features(TRAIN_PATH_NORMAL, 0)
+train_abnormal_segments, train_abnormal_labels = process_eeg_with_features(TRAIN_PATH_ABNORMAL, 1)
 
 # Process Evaluation Data (Normal = 0, Abnormal = 1)
-eval_normal_segments, eval_normal_labels = process_eeg(EVAL_PATH_NORMAL, 0)
-eval_abnormal_segments, eval_abnormal_labels = process_eeg(EVAL_PATH_ABNORMAL, 1)
+eval_normal_segments, eval_normal_labels = process_eeg_with_features(EVAL_PATH_NORMAL, 0)
+eval_abnormal_segments, eval_abnormal_labels = process_eeg_with_features(EVAL_PATH_ABNORMAL, 1)
 
 # Combine Training Data
 X_train = np.vstack([train_normal_segments, train_abnormal_segments])
