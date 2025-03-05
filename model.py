@@ -26,7 +26,7 @@ print(f"Validation Data Shape: {X_val.shape}, Validation Labels Shape: {y_val.sh
 
 #Checks if shape is correct for CNN-LSTM model
 if len(X_train.shape) != 3:
-    raise ValueError("X_train must have shape (samples, timesteps, features). Check your data preprocessing!")
+    raise ValueError("X_train must have shape (samples, timesteps, features).")
 
 #CNN-LSTM Model
 model = Sequential()
