@@ -10,12 +10,9 @@ TRAIN_PATH_ABNORMAL = os.path.join(BASE_PATH, "abnormal", "train")
 EVAL_PATH_ABNORMAL = os.path.join(BASE_PATH, "abnormal", "eval")
 
 
-# Processes EEG files and assigns labels based on folder name
-def process_eeg(folder_path, label):
-    all_segments = []
-    all_labels = []
-
-    # Lists all of the .edf files in the folder
+#Processes EEG files with artifact removal 
+def process_eeg_with_features(folder_path, label):
+    all_features, all_labels = [], []
     eeg_files = [f for f in os.listdir(folder_path) if f.endswith(".edf")]
 
     for file in eeg_files:
