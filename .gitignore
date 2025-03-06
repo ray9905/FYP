@@ -8,5 +8,7 @@ eeg_data/**
 *.npy  # NumPy saved files
 
 eeg_model.h5
-processed_eeg.npy
-labels.npy
+eval_labels.npy
+eval_eeg.npy
+train_labels.npy
+train_eeg.npy
