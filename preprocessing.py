@@ -57,12 +57,29 @@ def process_eeg_with_features(folder_path, label):
                 band_indices = (freqs >= low) & (freqs <= high)
                 band_power.append(np.mean(psd[:, band_indices], axis=1))
             return np.concatenate(band_power, axis=-1)
-
-
-       
-
-
         
+
+        #Extracts the Statistical Features
+        from scipy.stats import entropy
+        def compute_statistical_features(eeg_segment):
+            var = np.var(eeg_segment, axis=1)
+            mean = np.mean(eeg_segment, axis=1)
+            shannon_entropy = entropy(np.abs(eeg_segment) + 1e-6, axis=1)
+            return np.stack([var, mean, shannon_entropy], axis=-1)
+
+        #Computes the Features
+        psd_features = compute_psd_features(eeg_array, sfreq)
+        stat_features = compute_statistical_features(eeg_array)
+        combined_features = np.concatenate([psd_features, stat_features], axis=-1)
+
+        #Creates the labels
+        labels = np.full((combined_features.shape[0],), label)
+
+        all_features.append(combined_features)
+        all_labels.append(labels)
+
+    return (np.vstack(all_features), np.hstack(all_labels)) if all_features else (None, None)
+
 
 # Process Training Data (Normal = 0, Abnormal = 1)
 train_normal_segments, train_normal_labels = process_eeg_with_features(TRAIN_PATH_NORMAL, 0)
