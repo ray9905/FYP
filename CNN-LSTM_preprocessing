@@ -1,0 +1,94 @@
+import os
+import mne
+import numpy as np
+from scipy.signal import welch
+from sklearn.utils import shuffle
+
+#EEG Paths
+BASE_PATH = "/content/drive/My Drive/FYP/eeg_data"
+SAVE_PATH = "/content/drive/My Drive/FYP"
+
+EVAL_PATHS = [os.path.join(BASE_PATH, "normal", "eval"), os.path.join(BASE_PATH, "abnormal", "eval")]
+
+#Processing settings
+BATCH_SIZE = 50
+WINDOW_SIZE = 100
+MIN_SEGMENT_SIZE = 80
+
+OVERLAP_NORMAL = 0.25
+OVERLAP_ABNORMAL = 0.50
+
+#Computes Power Spectral Density (PSD) for EEG segment using Welchs method
+def compute_psd_features(eeg_segment, sfreq):
+    
+    nperseg = min(eeg_segment.shape[0], sfreq)
+    freqs, psd = welch(eeg_segment, sfreq, nperseg=nperseg, axis=0)
+
+    freq_bands = {"delta": (0.5, 4), "theta": (4, 8), "alpha": (8, 13), "beta": (13, 30), "gamma": (30, 50)}
+    band_power = []
+    for low, high in freq_bands.values():
+        band_indices = np.where((freqs >= low) & (freqs <= high))[0]
+        band_power.append(np.mean(psd[band_indices], axis=0) if band_indices.size > 0 else np.zeros(eeg_segment.shape[1]))
+    return np.array(band_power).T
+
+#Processes evaluation data and saves in batches
+def process_eval_data(folder_path, label, category):
+    
+    eeg_files = [f for f in os.listdir(folder_path) if f.endswith(".edf")]
+    eeg_files = shuffle(eeg_files, random_state=42)  #Shuffle to ensure randomness
+
+    all_features, all_labels, file_mapping = [], [], []  #Initialises file_mapping list
+    batch_num = 1
+
+    for i, file in enumerate(eeg_files):
+        file_path = os.path.join(folder_path, file)
+        print(f"Processing (Eval Batch {batch_num}): {file}")
+
+        try:
+            eeg_data = mne.io.read_raw_edf(file_path, preload=True)
+            eeg_data.filter(1, 50, verbose=False)
+            eeg_data.set_eeg_reference('average')
+#gets raw eeg data and converts to microvolts
+            eeg_array = eeg_data.get_data() * 1e6
+            eeg_array = eeg_array.T
+            sfreq = eeg_data.info["sfreq"]
+
+            step_size = int(WINDOW_SIZE * (1 - (OVERLAP_NORMAL if category == "eval_normal" else OVERLAP_ABNORMAL)))
+            num_windows = max(1, (eeg_array.shape[0] - MIN_SEGMENT_SIZE) // step_size)
+
+            eeg_segments = np.array([
+                eeg_array[i * step_size:i * step_size + WINDOW_SIZE]
+                for i in range(num_windows) if (i * step_size + WINDOW_SIZE) <= eeg_array.shape[0]
+            ])
+
+            if eeg_segments.size == 0:
+                print(f"Skipping {file}: Not enough samples.")
+                continue
+
+            psd_features = np.array([compute_psd_features(seg, sfreq) for seg in eeg_segments])
+            psd_features = psd_features.reshape(psd_features.shape[0], -1)
+
+            labels = np.full((psd_features.shape[0],), label)
+            all_features.append(psd_features)
+            all_labels.append(labels)
+            file_mapping.extend([file] * psd_features.shape[0])  #Adds file mapping
+
+            #Save batch every 50 files 
+            if (i + 1) % BATCH_SIZE == 0 or (i + 1) == len(eeg_files):
+                #Saves the features, labels, and file mappings in batches
+                np.save(f"{SAVE_PATH}/preprocessed_v3_{category}_batch{batch_num}_data.npy", np.vstack(all_features))
+                np.save(f"{SAVE_PATH}/preprocessed_v3_{category}_batch{batch_num}_labels.npy", np.hstack(all_labels))
+                np.save(f"{SAVE_PATH}/preprocessed_v3_{category}_batch{batch_num}_file_mapping.npy", np.array(file_mapping))  # Save file mapping
+                print(f"Saved Evaluation Batch {batch_num} ({category})")
+
+                all_features, all_labels, file_mapping = [], [], []  #Reset lists
+                batch_num += 1  #Moves to next batch
+
+        except Exception as e:
+            print(f"Skipping {file}: {e}")
+
+#Reprocesses evaluation data 
+process_eval_data(EVAL_PATHS[0], 0, "eval_normal")  
+process_eval_data(EVAL_PATHS[1], 1, "eval_abnormal") 
+
+print("Evaluation batches processed ")
