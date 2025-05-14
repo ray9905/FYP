@@ -1,0 +1,95 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.utils import to_categorical
+
+#Set Paths 
+SAVE_PATH = "/content/drive/My Drive/FYP"
+
+#Loads preprocessed training data 
+X_train = np.load(f"{SAVE_PATH}/preprocessed_v3_train_perfectly_balanced_data.npy")
+y_train = np.load(f"{SAVE_PATH}/preprocessed_v3_train_perfectly_balanced_labels.npy")
+
+
+#Splits the data into training and validation sets (90% train, 10% validation)
+X_train, X_val, y_train, y_val = train_test_split(
+    X_train, y_train, test_size=0.1, random_state=42
+)
+
+#Reshapes for CNN-LSTM
+#CNN-LSTM expects 3D input (samples, time_steps, features)
+#EEG data is reshaped so each time step is treated as a single feature
+X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)  #Reshaping for 1D CNN input
+X_val = X_val.reshape(X_val.shape[0], X_val.shape[1], 1)  #Reshaping for 1D CNN input
+
+#If the labels are integers they are converted into a one-hot encoded format
+if len(y_train.shape) == 1:
+    y_train = to_categorical(y_train, num_classes=2)  # Two classes normal (0) and abnormal (1)
+if len(y_val.shape) == 1:
+    y_val = to_categorical(y_val, num_classes=2)
+
+#Prints the shape of the training and validation sets to see if reshaping worked
+print(f"Training Data Shape: {X_train.shape}, y_train: {y_train.shape}")
+print(f"Validation Data Shape: {X_val.shape}, y_val: {y_val.shape}")
+
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, LSTM, Dense, Dropout, LayerNormalization
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
+
+#Model Architecture
+
+model = Sequential([
+
+    #Conv1D Layers Extracts local features from the EEG signal over time
+    Conv1D(filters=64, kernel_size=5, activation='relu', padding='same', input_shape=(X_train.shape[1], 1)),
+    LayerNormalization(),  #Normalises activations for stable training
+    MaxPooling1D(pool_size=2),  #Downsamples to reduce dimensionality
+
+    #Second Conv1D Layer to Extract more complex features
+    Conv1D(filters=128, kernel_size=3, activation='relu', padding='same'),
+    LayerNormalization(),  #Normalises again for better convergence
+    MaxPooling1D(pool_size=2),  #Further downsampling
+
+    #LSTM Layer to capture long term temporal dependencies in the EEG signal
+    LSTM(64, return_sequences=True, dropout=0.3, recurrent_dropout=0.3),  #First LSTM layer with dropout
+    LSTM(32, dropout=0.3, recurrent_dropout=0.3),  #Second LSTM layer
+
+    #Dense Layers For final classification decision
+    Dense(64, activation='relu'),  #Fully connected layer 
+    Dropout(0.4),  #Dropout for regularisation
+    Dense(32, activation='relu'),  #Fully connected layer
+    Dropout(0.3),  #Another dropout to avoid overfitting
+
+    # Output Layer produces the final classification output as probabilities
+    Dense(2, activation='softmax')  # Two output classes normal (0) and abnormal (1)
+])
+
+
+# Adam optimizer is used with a small learning rate for stable training
+model.compile(optimizer=Adam(learning_rate=0.0005), loss="categorical_crossentropy", metrics=['accuracy'])
+
+print("Model compiled")
+
+# Path where the best model will be saved during training
+model_save_path = f"{SAVE_PATH}/model2_full_train.keras"
+
+# Callbacks 
+
+#ModelCheckpoint saves the model whenthe validation loss improves
+checkpoint = ModelCheckpoint(model_save_path, monitor="val_loss", save_best_only=True, verbose=1)
+
+# EarlyStopping stops training early if the validation loss doesn't improve after 5 epochs (patience)
+early_stopping = EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True, verbose=1)
+
+#Trains the Model on Full Data 
+
+history = model.fit(
+    X_train, y_train,
+    epochs=20,  #Trains for 20 epochs
+    batch_size=256,  #Batch size
+    validation_data=(X_val, y_val),  #Validation data to monitor overfitting
+    callbacks=[checkpoint, early_stopping]  #Saves the best model and stop early if no improvement
+)
+
+print(f"Model training done and saved to {model_save_path}")
