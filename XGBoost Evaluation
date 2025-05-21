@@ -1,0 +1,73 @@
+
+import numpy as np
+import os
+from scipy.stats import skew, kurtosis
+import xgboost as xgb
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
+import joblib
+from collections import defaultdict
+
+#Function to load preprocessed batches with file mapping
+def load_batches_with_mapping(directory, dataset_type='train'):
+    X, y, file_mapping = [], [], []
+    files = sorted([f for f in os.listdir(directory) if f.startswith(f'X_{dataset_type}')])
+
+    for file in files:
+        X_batch = np.load(os.path.join(directory, file))
+        y_batch = np.load(os.path.join(directory, file.replace('X_', 'y_')))
+        mapping_batch = np.load(os.path.join(directory, file.replace('X_', 'file_mapping_').replace('_eeg_', '_')) )
+        X.extend(X_batch)
+        y.extend(y_batch)
+        file_mapping.extend(mapping_batch)
+
+    return np.array(X), np.array(y), np.array(file_mapping)
+
+#Load preprocessed data
+save_directory = "/content/drive/MyDrive/FYP/new-preprocessed"
+X_train, y_train, _ = load_batches_with_mapping(save_directory, 'train')
+X_eval, y_eval, eval_file_mapping = load_batches_with_mapping(save_directory, 'eval')
+
+print(f"Training data shape: {X_train.shape}, Labels shape: {y_train.shape}")
+print(f"Evaluation data shape: {X_eval.shape}, Labels shape: {y_eval.shape}")
+
+#Train XGBoost model
+model = xgb.XGBClassifier(n_estimators=200, max_depth=5, learning_rate=0.1, random_state=42)
+model.fit(X_train, y_train)
+
+#Save the trained model
+joblib.dump(model, os.path.join(save_directory, "xgboost_eeg_model.pkl"))
+
+#Evaluate segment-level performance
+y_pred = model.predict(X_eval)
+print("Segment-level evaluation:")
+print(classification_report(y_eval, y_pred))
+
+#Combine predictions for file-level classification using mean probability
+file_predictions_proba = defaultdict(list)
+file_true_labels = {}
+
+#Get prediction probabilities
+y_pred_proba = model.predict_proba(X_eval)[:, 1]
+
+for proba, true_label, file in zip(y_pred_proba, y_eval, eval_file_mapping):
+    file_predictions_proba[file].append(proba)
+    file_true_labels[file] = true_label  # same for all segments of a file
+
+final_preds, final_labels = [], []
+
+for file, probas in file_predictions_proba.items():
+    final_pred = 1 if np.mean(probas) > 0.5 else 0  # threshold-based aggregation
+    final_preds.append(final_pred)
+    final_labels.append(file_true_labels[file])
+
+#File-level evaluation
+print("File-level evaluation:")
+print(classification_report(final_labels, final_preds))
+
+#Display confusion matrix visually
+cm = confusion_matrix(final_labels, final_preds)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Normal', 'Abnormal'])
+disp.plot(cmap=plt.cm.Blues)
+plt.title("XGBoost File-level Confusion Matrix")
+plt.show()
